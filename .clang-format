@@ -1,0 +1,43 @@
+Language: C
+BasedOnStyle: LLVM
+
+# Indentation
+IndentWidth: 4
+ContinuationIndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+# Line length
+ColumnLimit: 80
+
+# Braces
+BreakBeforeBraces: Attach
+
+# Keep control-flow bodies explicit and readable
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: None
+
+# C pointer style:
+#   char *buffer;
+#   struct sockaddr *addr;
+DerivePointerAlignment: false
+PointerAlignment: Right
+
+# switch / case
+IndentCaseLabels: true
+
+# Function calls and declarations
+BinPackArguments: false
+BinPackParameters: false
+
+# Includes
+SortIncludes: CaseSensitive
+IncludeBlocks: Preserve
+
+# Whitespace
+SpaceBeforeParens: ControlStatements
+
+# Keep Unix line endings, useful since the project lives in WSL/Linux
+LineEnding: LF
