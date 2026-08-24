@@ -27,8 +27,23 @@ socket finché il client non chiude, e risponde a ogni blocco di dati ricevuto.
 ## Esecuzione
 
 ```bash
-make        # compila
-./server    # resta in ascolto sulla porta 1101
+make                    # compila release + debug
+build/debug/server      # resta in ascolto sulla porta 1101
+```
+
+### Release
+```bash
+make release            # compila la versione di release in build/release
+```
+
+### Debug
+```bash
+make debug              # compila la versione di debug in build/debug
+```
+
+### Assembly
+```bash
+make assembly           # compila l'assembly in build/assembly
 ```
 
 ## Test
@@ -42,10 +57,11 @@ nc localhost 1101
 |File               |Descrizione                                 |
 |-------------------|--------------------------------------------|
 |`server.c`         |tutto il codice, con i commenti di studio   |
-|`Makefile`         |compilazione; produce anche `server.s`      |
-|`.clang_format`    |stile del codice - LLVM, 4 spazi, 80 colonne|
+|`Makefile`         |compilazione del progetto                   |
+|`.clang-format`    |stile del codice - LLVM, 4 spazi, 80 colonne|
 |`compile_flags.txt`|i flag di compilazione letti da clangd      |
 |`CLAUDE.md`        |regole di lavoro per l'assistente AI        |
+|`build/`           |raccolta degli artefatti di build           |
 
 ## Licenza
 

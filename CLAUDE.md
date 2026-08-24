@@ -37,16 +37,19 @@
 
 ## Comandi
 
-La compilazione avviene tramite il Makefile che produce tre artefatti:
+La compilazione avviene tramite il Makefile che produce versioni diverse degli artefatti in cartelle separate:
 
-- Il file eseguibile: ./server
-- Il file assembly  : ./server.s
-- Il file object    : ./server.o
+- Release: build/release/{server, server.o}
+- Debug: build/debug/{server, server.o}
+- Assembly: build/assembly/server.s
 
-|Comando            |Descrizione                |
-|-------------------|---------------------------|
-|`make`             |Compila il codice          |
-|`make clean`       |Rimuove gli artefatti      |
-|`./server`         |Avvia il server            |
-|`nc localhost 1101`|Collega un client al server|
+|Comando             |Descrizione                   |
+|--------------------|------------------------------|
+|`make`              |Compila sia release che debug |
+|`make clean`        |Rimuove gli artefatti         |
+|`make release`      |Compila la versione di release|
+|`make debug`        |Compila la versione di debug  |
+|`make assembly`     |Compila l'assembly            |
+|`build/debug/server`|Avvia il server               |
+|`nc localhost 1101` |Collega un client al server   |
 
