@@ -1,24 +1,49 @@
 CC = gcc
+BASE = -std=gnu11 -Wall -Wextra
 
-# Build normale
-CFLAGS = -std=gnu11 -Wall -Wextra -O2
 SANFLAGS = -fsanitize=address,undefined
 
-# Assembly più leggibile per studio
-ASMFLAGS = -std=gnu11 -Wall -Wextra -O0
+.PHONY: all debug release assembly clean
 
-.PHONY: all clean
+all: debug release
 
-all: server server.s
+# Debug: osservabile, con i controlli runtime
+DBGDIR = build/debug
+DBGFLAGS = $(BASE) -g -O0 -fno-omit-frame-pointer
 
-server: server.o
+debug: $(DBGDIR)/server
+
+$(DBGDIR)/server.o: server.c
+	mkdir -p $(@D)
+	$(CC) $(DBGFLAGS) $(SANFLAGS) -c -o $@ $<
+
+$(DBGDIR)/server: $(DBGDIR)/server.o
 	$(CC) $(SANFLAGS) -o $@ $<
 
-server.o: server.c
-	$(CC) $(CFLAGS) $(SANFLAGS) -c -o $@ $<
+# Release: ottimizzato, seconda opinione del compilatore
+RELDIR = build/release
+RELFLAGS = $(BASE) -O2
 
-server.s: server.c
+release: $(RELDIR)/server
+
+$(RELDIR)/server.o: server.c
+	mkdir -p $(@D)
+	$(CC) $(RELFLAGS) -c -o $@ $<
+
+$(RELDIR)/server: $(RELDIR)/server.o
+	$(CC) -o $@ $<
+
+# Assembly: ispezione, senza strumentazione
+ASMDIR = build/assembly
+ASMFLAGS = $(BASE) -O0
+
+assembly: $(ASMDIR)/server.s
+
+$(ASMDIR)/server.s: server.c
+	mkdir -p $(@D)
 	$(CC) $(ASMFLAGS) -S -o $@ $<
 
+# Pulizia
 clean:
-	rm -f server server.o server.s
+	rm -rf build
+
