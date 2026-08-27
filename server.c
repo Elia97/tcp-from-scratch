@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <errno.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
@@ -162,8 +163,48 @@ int main(void) {
             accept(fd, (struct sockaddr *)&client_addr, &client_addr_len);
 
         if (client_fd == -1) {
-            perror("accept");
-            return 1;
+            /*
+             * Il valore di ritorno segnala che la chiamata è fallita, errno ne
+             * contiene il motivo. Non è una variabile globale ma una macro, che
+             * dà accesso a una locazione propria di ogni thread.
+             *
+             * Il kernel la scrive al ritorno di una chiamata fallita, ma
+             * nessuno la azzera mai. Qualunque chiamata successiva può
+             * sovrascriverla, anche se non fallisce. Il valore viene quindi
+             * copiato subito, prima di qualsiasi altra operazione.
+             */
+            int err = errno;
+
+            switch (err) {
+                /*
+                 * Errori che riguardano una singola connessione.
+                 *
+                 * ECONNABORTED: il client ha completato l'handshake ed è stato
+                 * messo nella coda del listening socket, poi se n'è andato
+                 * prima che accept() lo prendesse in carico.
+                 *
+                 * EPERM: regole di firewall hanno vietato la connessione.
+                 *
+                 * EPROTO: errore di protocollo sulla connessione.
+                 *
+                 * In questi tre casi il server è sano e si continua ad
+                 * accettare richieste.
+                 */
+                case ECONNABORTED:
+                case EPERM:
+                case EPROTO:
+                    perror("accept");
+                    continue;
+
+                /*
+                 * La sezione ERRORS di man 2 accept dichiara esplicitamente
+                 * che possono arrivare errori di rete propri del nuovo socket,
+                 * e che kernel diversi ne restituiscono altri ancora.
+                 */
+                default:
+                    perror("accept");
+                    return 1;
+            }
         }
 
         /*
