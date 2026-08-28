@@ -24,6 +24,19 @@ int main(void) {
      */
     int fd = socket(AF_INET, SOCK_STREAM, 0);
 
+    /*
+     * Il valore di ritorno di una chiamata di sistema dice soltanto che è
+     * andata male. Il motivo viaggia su un canale separato: errno.
+     *
+     * errno non è una variabile globale ordinaria: è una macro che dà accesso a
+     * una locazione propria di ogni thread, scritta dal kernel al ritorno della
+     * chiamata fallita. Nessuno la azzera mai, quindi vale solo dopo che il
+     * valore di ritorno ha accertato il fallimento.
+     *
+     * perror() legge errno, lo traduce in inglese e stampa il risultato su
+     * stderr, preceduto dalla stringa che riceve. Quella stringa è solo un
+     * prefisso di contesto: dice quale chiamata è fallita, non quale errore.
+     */
     if (fd == -1) {
         perror("socket");
         return 1;
@@ -164,14 +177,10 @@ int main(void) {
 
         if (client_fd == -1) {
             /*
-             * Il valore di ritorno segnala che la chiamata è fallita, errno ne
-             * contiene il motivo. Non è una variabile globale ma una macro, che
-             * dà accesso a una locazione propria di ogni thread.
-             *
-             * Il kernel la scrive al ritorno di una chiamata fallita, ma
-             * nessuno la azzera mai. Qualunque chiamata successiva può
-             * sovrascriverla, anche se non fallisce. Il valore viene quindi
-             * copiato subito, prima di qualsiasi altra operazione.
+             * Qui errno non viene solo stampato ma serve a decidere, quindi il
+             * valore va copiato prima di qualsiasi altra chiamata: qualunque
+             * funzione eseguita nel frattempo può sovrascriverlo, anche se
+             * riesce.
              */
             int err = errno;
 
