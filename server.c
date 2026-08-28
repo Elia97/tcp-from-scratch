@@ -131,8 +131,63 @@ int main(void) {
         return 1;
     }
 
-    printf("\n\nfd = %d\n", fd);
-    printf("\nsizeof addr = %zu\n", sizeof addr);
+    /*
+     * getsockname() chiede al kernel l'indirizzo effettivamente associato al
+     * socket.
+     *
+     * Fino a qui addr conteneva quello che è stato chiesto con bind(); dopo la
+     * chiamata contiene la risposta del kernel.
+     *
+     * Le due cose coincidono finché la porta è fissata nel sorgente. Con
+     * sin_port a 0 la porta la sceglierebbe il kernel, e addr continuerebbe a
+     * contenere 0 essendo una variabile locale.
+     *
+     * addr_len è un parametro input/output.
+     *
+     * Prima della chiamata indica quanto spazio è disponibile in addr.
+     *
+     * Dopo la chiamata contiene la dimensione dell'indirizzo scritto dal
+     * kernel.
+     */
+    socklen_t addr_len = sizeof addr;
+
+    if (getsockname(fd, (struct sockaddr *)&addr, &addr_len) == -1) {
+        perror("getsockname");
+        return 1;
+    }
+
+    /*
+     * L'indirizzo IP dentro sockaddr_in è memorizzato in formato binario, non
+     * come stringa "0.0.0.0".
+     *
+     * INET_ADDRSTRLEN indica lo spazio necessario per rappresentare un
+     * indirizzo IPv4 in formato testuale, incluso il terminatore '\0'.
+     */
+    char server_ip[INET_ADDRSTRLEN];
+
+    /*
+     * inet_ntop = Network TO Presentation
+     *
+     * Converte l'indirizzo IPv4 binario contenuto in:
+     *
+     *    addr.sin_addr
+     *
+     * nella sua rappresentazione leggibile:
+     *
+     *    "0.0.0.0"
+     *
+     * Non alloca niente: scrive nel buffer che riceve e ne restituisce
+     * l'indirizzo.
+     */
+    inet_ntop(AF_INET, &addr.sin_addr, server_ip, sizeof server_ip);
+
+    /*
+     * ntohs = Network TO Host Short
+     *
+     * L'inversa di htons: riporta l'intero a 16 bit dal network byte order a
+     * quello della macchina.
+     */
+    printf("\n\nServer in ascolto: %s:%d\n", server_ip, ntohs(addr.sin_port));
 
     /*
      * Il listening socket continua a esistere per tutta la vita del server.
@@ -147,15 +202,9 @@ int main(void) {
         struct sockaddr_in client_addr;
 
         /*
-         * client_addr_len è un parametro input/output.
-         *
-         * Prima di accept():
-         *    indica quanto spazio è disponibile in client_addr.
-         *
-         * Dopo accept():
-         *    contiene la dimensione dell'indirizzo scritto dal kernel.
-         *
-         * Viene quindi reinizializzato prima di ogni accept().
+         * accept() scrive in client_addr_len la dimensione dell'indirizzo
+         * ricevuto, quindi il valore va reimpostato prima di ogni chiamata. La
+         * dichiarazione dentro il ciclo lo fa a ogni iterazione.
          */
         socklen_t client_addr_len = sizeof client_addr;
 
@@ -217,33 +266,16 @@ int main(void) {
         }
 
         /*
-         * L'indirizzo IP dentro sockaddr_in è memorizzato in formato binario,
-         * non come stringa "127.0.0.1".
-         *
-         * INET_ADDRSTRLEN indica lo spazio necessario per rappresentare un
-         * indirizzo IPv4 in formato testuale, incluso il terminatore '\0'.
+         * client_addr è stato riempito dal kernel durante accept(): a
+         * differenza di addr, il cui contenuto era stato scritto qui sopra,
+         * questi valori descrivono la connessione appena accettata.
          */
         char client_ip[INET_ADDRSTRLEN];
 
-        /*
-         * inet_ntop = Network TO Presentation
-         *
-         * Converte l'indirizzo IPv4 binario contenuto in:
-         *
-         *    client_addr.sin_addr
-         *
-         * nella sua rappresentazione leggibile:
-         *
-         *    "127.0.0.1"
-         */
         inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, sizeof client_ip);
 
         /*
-         * sin_port è ancora in network byte order.
-         *
-         * ntohs = Network TO Host Short
-         *
-         * La porta mostrata qui è normalmente una ephemeral port, scelta
+         * La porta del client è normalmente una ephemeral port, scelta
          * automaticamente dal sistema operativo del client.
          *
          * Una connessione TCP è identificata dalla cosiddetta 4-tuple:
